@@ -9,9 +9,20 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@arco-design/web-react": "^2.66.16",
+    "@arco-themes/react-easy-email-pro": "^0.0.1",
+    "easy-email-pro-core": "^1.60.1",
+    "easy-email-pro-editor": "^1.60.1",
+    "easy-email-pro-kit": "^1.60.1",
+    "easy-email-pro-theme": "^1.60.1",
+    "mjml-browser": "^5.4.1",
     "next": "16.3.6",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "slate": "^0.126.2",
+    "slate-dom": "^0.126.0",
+    "slate-history": "^0.113.1",
+    "slate-react": "^0.127.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
