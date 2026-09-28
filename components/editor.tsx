@@ -5,6 +5,7 @@ import React, { useMemo, useRef } from "react";
 import { EmailEditorProvider, EmailTemplate } from "easy-email-pro-editor";
 import {
   EditorContextProps,
+  IconFont,
   Retro,
   ThemeConfigProps,
 } from "easy-email-pro-theme";
@@ -14,7 +15,23 @@ import mjml from "mjml-browser";
 import "@arco-themes/react-easy-email-pro/css/arco.css";
 import templateData from "./template.json";
 import { EditorCore } from "easy-email-pro-core";
+import { ElementType, t } from "easy-email-pro-core";
+import { Layout } from "@arco-design/web-react";
 import axios from "axios";
+
+const BlockIcon = ({ name }: { name: string }) => (
+  <IconFont className="block-list-grid-item-icon" iconName={name} />
+);
+
+// Text badge for blocks without a built-in icon (e.g. "H1", "WR")
+const TextIcon = ({ children }: { children: React.ReactNode }) => (
+  <span
+    className="block-list-grid-item-icon"
+    style={{ fontSize: 18, fontWeight: 700, lineHeight: 1 }}
+  >
+    {children}
+  </span>
+);
 
 export default function MyEditor() {
   const instanceRef = useRef<EditorContextProps | null>(null);
@@ -78,6 +95,171 @@ export default function MyEditor() {
     // Optional: Auto-save, validation, etc.
   };
 
+  const categories: ThemeConfigProps["categories"] = [
+    {
+      get label() {
+        return t("Content");
+      },
+      active: true,
+      displayType: "grid",
+      blocks: [
+        {
+          type: ElementType.STANDARD_PARAGRAPH,
+          icon: <BlockIcon name="icon-text" />,
+        },
+        {
+          type: ElementType.STANDARD_H1,
+          title: t("Heading 1"),
+          icon: <TextIcon>H1</TextIcon>,
+        },
+        {
+          type: ElementType.STANDARD_H2,
+          title: t("Heading 2"),
+          icon: <TextIcon>H2</TextIcon>,
+        },
+        {
+          type: ElementType.STANDARD_H3,
+          title: t("Heading 3"),
+          icon: <TextIcon>H3</TextIcon>,
+        },
+        {
+          type: ElementType.STANDARD_IMAGE,
+          payload: {
+            attributes: {
+              "padding-top": "0px",
+              "padding-bottom": "0px",
+              "padding-left": "0px",
+              "padding-right": "0px",
+            },
+          },
+          icon: <BlockIcon name="icon-img" />,
+        },
+        {
+          type: ElementType.STANDARD_BUTTON,
+          payload: { attributes: { "line-height": "130%" } },
+          icon: <BlockIcon name="icon-button" />,
+        },
+        {
+          type: ElementType.STANDARD_BLOCK_QUOTE,
+          title: t("Quote"),
+          icon: <TextIcon>&ldquo;&rdquo;</TextIcon>,
+        },
+        {
+          type: ElementType.STANDARD_TEXT_LIST,
+          title: t("List"),
+          icon: <BlockIcon name="icon-list-ul" />,
+        },
+        {
+          type: ElementType.STANDARD_TABLE2,
+          title: t("Table"),
+          icon: <BlockIcon name="icon-table" />,
+        },
+        {
+          type: ElementType.STANDARD_DIVIDER,
+          payload: {
+            attributes: {
+              "border-width": "1px",
+              "border-style": "solid",
+              "border-color": "#C9CCCF",
+              "padding-top": "10px",
+              "padding-right": "0px",
+              "padding-bottom": "10px",
+              "padding-left": "0px",
+            },
+          },
+          icon: <BlockIcon name="icon-divider" />,
+        },
+        {
+          type: ElementType.STANDARD_SPACER,
+          icon: <BlockIcon name="icon-spacing" />,
+        },
+        {
+          type: ElementType.STANDARD_NAVBAR,
+          icon: <BlockIcon name="icon-navbar" />,
+        },
+        {
+          type: ElementType.STANDARD_SOCIAL,
+          payload: {
+            attributes: { "icon-size": "30px", spacing: "20px" },
+          },
+          icon: <BlockIcon name="icon-social" />,
+        },
+        {
+          type: ElementType.STANDARD_HERO,
+          icon: <BlockIcon name="icon-hero" />,
+        },
+      ],
+    },
+    {
+      get label() {
+        return t("Structure");
+      },
+      active: true,
+      displayType: "grid",
+      blocks: [
+        {
+          type: ElementType.STANDARD_WRAPPER,
+          title: t("Wrapper"),
+          icon: <TextIcon>WR</TextIcon>,
+        },
+        {
+          type: ElementType.STANDARD_SECTION,
+          title: t("Section"),
+          icon: <TextIcon>SC</TextIcon>,
+        },
+        {
+          type: ElementType.STANDARD_GROUP,
+          title: t("Group"),
+          icon: <TextIcon>GR</TextIcon>,
+        },
+      ],
+    },
+    {
+      get label() {
+        return t("Layout");
+      },
+      active: true,
+      displayType: "column",
+      blocks: [
+        {
+          get title() {
+            return t("1 column");
+          },
+          payload: [["100%"]],
+        },
+        {
+          get title() {
+            return t("2 column");
+          },
+          payload: [
+            ["50%", "50%"],
+            ["33%", "67%"],
+            ["67%", "33%"],
+            ["25%", "75%"],
+            ["75%", "25%"],
+          ],
+        },
+        {
+          get title() {
+            return t("3 column");
+          },
+          payload: [
+            ["33.33%", "33.33%", "33.33%"],
+            ["25%", "50%", "25%"],
+            ["25%", "25%", "50%"],
+            ["50%", "25%", "25%"],
+          ],
+        },
+        {
+          get title() {
+            return t("4 column");
+          },
+          payload: [["25%", "25%", "25%", "25%"]],
+        },
+      ],
+    },
+  ];
+
   // Configure the editor with all necessary options
   const config = Retro.useCreateConfig({
     // Client ID for paid plans (optional for free tier)
@@ -115,6 +297,8 @@ export default function MyEditor() {
 
     // Feature Flags
     enabledAutoComplete: true, // Enable automatic container structure completion
+
+    categories,
   });
 
   return (
