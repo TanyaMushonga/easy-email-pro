@@ -17,7 +17,29 @@ import templateData from "./template.json";
 import { EditorCore } from "easy-email-pro-core";
 import { ElementType, t } from "easy-email-pro-core";
 import { Layout } from "@arco-design/web-react";
+import { PluginManager } from "easy-email-pro-core";
+import {
+  Countdown,
+  CountdownV2,
+  ImageWithText,
+  KitElementType,
+  QRCode,
+  Shopwindow,
+  Video,
+} from "easy-email-pro-kit";
+// Adds the kit's element types to easy-email-pro-core's Element type
+import type {} from "easy-email-pro-kit/lib/typings/custom-types";
 import axios from "axios";
+
+// Register the kit's marketing elements so they can be used in categories
+PluginManager.registerPlugins([
+  Video,
+  ImageWithText,
+  Countdown,
+  CountdownV2,
+  QRCode,
+  Shopwindow,
+]);
 
 const BlockIcon = ({ name }: { name: string }) => (
   <IconFont className="block-list-grid-item-icon" iconName={name} />
@@ -211,6 +233,45 @@ export default function MyEditor() {
           type: ElementType.STANDARD_GROUP,
           title: t("Group"),
           icon: <TextIcon>GR</TextIcon>,
+        },
+      ],
+    },
+    {
+      get label() {
+        return t("Marketing");
+      },
+      active: true,
+      displayType: "grid",
+      blocks: [
+        {
+          type: KitElementType.COMMON_VIDEO,
+          title: t("Video"),
+          icon: <BlockIcon name="icon-video" />,
+        },
+        {
+          type: KitElementType.COMMON_IMAGE_WITH_TEXT,
+          title: t("Image + text"),
+          icon: <TextIcon>I+T</TextIcon>,
+        },
+        {
+          type: KitElementType.MARKETING_COUNTDOWN,
+          title: t("Countdown"),
+          icon: <TextIcon>⏱</TextIcon>,
+        },
+        {
+          type: KitElementType.MARKETING_COUNTDOWN_V2,
+          title: t("Countdown V2"),
+          icon: <TextIcon>⏳</TextIcon>,
+        },
+        {
+          type: KitElementType.MARKETING_QR_CODE,
+          title: t("QR code"),
+          icon: <TextIcon>QR</TextIcon>,
+        },
+        {
+          type: KitElementType.MARKETING_SHOPWINDOW,
+          title: t("Products"),
+          icon: <BlockIcon name="icon-bag" />,
         },
       ],
     },
