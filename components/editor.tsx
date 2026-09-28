@@ -1,4 +1,4 @@
-'use client'
+"use client";
 // Lets Arco's imperative APIs (Message, Modal, Notification) render on React 19
 import "@arco-design/web-react/es/_util/react-19-adapter";
 import React, { useMemo, useRef } from "react";
@@ -103,9 +103,15 @@ export default function MyEditor() {
     showPreview: true, // Show email preview
     showSidebar: true, // Show left sidebar with blocks
     showBlockPaths: true, // Show breadcrumb path for selected block
-    compact: false, // Single or double sidebar layout
+    compact: true, // true = Style panel in a separate right sidebar
     showDragMoveIcon: true, // Show drag handle icons
     showInsertTips: true, // Show insertion hints
+    showPreviousLevelIcon: true,
+    showTextDirectionMode: true, // Show text direction mode (LTR/RTL)
+    showTextHTMLMode: true, // Show HTML editing mode for text blocks
+    showLogic: true,
+    controller: true,
+    showGenerateBlockImage: true,
 
     // Feature Flags
     enabledAutoComplete: true, // Enable automatic container structure completion
