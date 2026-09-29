@@ -1,7 +1,7 @@
 "use client";
 // Lets Arco's imperative APIs (Message, Modal, Notification) render on React 19
 import "@arco-design/web-react/es/_util/react-19-adapter";
-import React, { useMemo, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { EmailEditorProvider, EmailTemplate } from "easy-email-pro-editor";
 import {
   EditorContextProps,
@@ -18,7 +18,7 @@ import templateData from "./template.json";
 import { prebuiltBlocks as starterBlocks } from "./prebuilt-blocks";
 import { EditorCore } from "easy-email-pro-core";
 import { ElementType, t } from "easy-email-pro-core";
-import { Layout } from "@arco-design/web-react";
+import { Button, Layout } from "@arco-design/web-react";
 import { BlockManager, PluginManager } from "easy-email-pro-core";
 import {
   Countdown,
@@ -33,7 +33,6 @@ import {
 import type {} from "easy-email-pro-kit/lib/typings/custom-types";
 import { PrebuiltBlockCategory } from "easy-email-pro-theme";
 import { StandardSectionElement } from "easy-email-pro-core";
-import axios from "axios";
 
 // Register the kit's marketing elements so they can be used in categories
 PluginManager.registerPlugins([
@@ -88,16 +87,83 @@ const TextIcon = ({ children }: { children: React.ReactNode }) => (
   </span>
 );
 
+const DRAFT_KEY = "easy-email-pro:draft";
+const AUTOSAVE_DELAY_MS = 1500;
+
+type SaveStatus = { state: "idle" | "saving" | "saved" | "error"; at?: Date };
+
+// Returns the draft saved by auto-save, if there is one
+function loadDraft(): EmailTemplate | null {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    return raw ? (JSON.parse(raw) as EmailTemplate) : null;
+  } catch {
+    return null;
+  }
+}
+
+const statusText = (status: SaveStatus) => {
+  switch (status.state) {
+    case "saving":
+      return "Saving…";
+    case "saved":
+      return `Saved ${status.at?.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+    case "error":
+      return "Auto-save failed";
+    default:
+      return "";
+  }
+};
+
+// Fills the 66px left above the editor (see `height` in the config)
+const TopBar = ({
+  subject,
+  status,
+  onExport,
+}: {
+  subject: string;
+  status: SaveStatus;
+  onExport: () => void;
+}) => (
+  <div
+    style={{
+      height: 66,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: "0 24px",
+      borderBottom: "1px solid #e5e6eb",
+      background: "#fff",
+    }}
+  >
+    <strong style={{ fontSize: 16 }}>{subject}</strong>
+    <span style={{ color: "#86909c", fontSize: 14 }}>{statusText(status)}</span>
+    <Button type="primary" onClick={onExport}>
+      Export HTML
+    </Button>
+  </div>
+);
+
 export default function MyEditor() {
   const instanceRef = useRef<EditorContextProps | null>(null);
 
   // Initialize editor with template data
   // You can fetch this data from your server or use a local JSON file
+  // Starts from the auto-saved draft when there is one
   const initialValues: EmailTemplate = useMemo(() => {
-    return {
-      subject: templateData.subject,
-      content: templateData.content,
-    };
+    return (
+      loadDraft() ?? {
+        subject: templateData.subject,
+        // JSON imports type `type` fields as plain strings
+        content: templateData.content as EmailTemplate["content"],
+      }
+    );
+  }, []);
+
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>({ state: "idle" });
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
   }, []);
 
   // Handle file uploads (images, etc.)
@@ -119,36 +185,40 @@ export default function MyEditor() {
     );
   };
 
-  // Handle form submission
-  // This is called when the user clicks the save/submit button
-  const onSubmit: ThemeConfigProps["onSubmit"] = async (values, editor) => {
-    console.log("Template values:", values);
-    console.log("Editor instance:", editor);
-
-    // Convert the template to MJML format
+  // Called by the "Export HTML" button (via instanceRef.current.submit())
+  const onSubmit: ThemeConfigProps["onSubmit"] = async (values) => {
     const mjmlStr = EditorCore.toMJML({
       element: values.content,
       mode: "production",
       beautify: true,
     });
 
-    // Convert MJML to HTML using mjml-browser
-    const html = mjml(mjmlStr).html;
+    // mjml-browser v5 is async
+    const { html, errors } = await mjml(mjmlStr);
+    if (errors.length) console.warn("MJML warnings:", errors);
 
-    // Send to your backend API
-    await axios.post("/your-server-url", {
-      content: values.content,
-      subject: values.subject,
-      html: html,
-    });
+    // TODO: send to your backend instead of logging
+    console.log("Subject:", values.subject);
+    console.log("HTML:", html);
   };
 
-  // Handle real-time changes
-  // This is called whenever the template is modified
-  const onChange: ThemeConfigProps["onChange"] = async (values, editor) => {
-    console.log("Template changed:", values);
-    // Optional: Auto-save, validation, etc.
-  };
+  // Auto-save: store the template once edits pause for AUTOSAVE_DELAY_MS
+  const onChange: ThemeConfigProps["onChange"] = useCallback(
+    (values: EmailTemplate) => {
+      setSaveStatus({ state: "saving" });
+      if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+      autosaveTimer.current = setTimeout(() => {
+        try {
+          localStorage.setItem(DRAFT_KEY, JSON.stringify(values));
+          setSaveStatus({ state: "saved", at: new Date() });
+        } catch (error) {
+          console.error("Auto-save failed:", error);
+          setSaveStatus({ state: "error" });
+        }
+      }, AUTOSAVE_DELAY_MS);
+    },
+    [],
+  );
 
   const categories: ThemeConfigProps["categories"] = [
     {
@@ -522,6 +592,11 @@ export default function MyEditor() {
 
   return (
     <EmailEditorProvider {...config}>
+      <TopBar
+        subject={instanceRef.current?.values.subject ?? initialValues.subject}
+        status={saveStatus}
+        onExport={() => instanceRef.current?.submit()}
+      />
       <Retro.Layout></Retro.Layout>
     </EmailEditorProvider>
   );
