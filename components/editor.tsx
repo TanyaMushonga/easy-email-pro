@@ -45,6 +45,35 @@ PluginManager.registerPlugins([
   Shopwindow,
 ]);
 
+// Merge tags offered in the text toolbar; mergetagsData fills them in previews
+const mergetags = [
+  {
+    label: "User",
+    value: "",
+    children: [
+      { label: "Name", value: "user.name" },
+      { label: "Email", value: "user.email" },
+    ],
+  },
+];
+
+const mergetagsData = {
+  user: {
+    name: "John Doe",
+    email: "john@example.com",
+  },
+};
+
+const fontList = [
+  { value: "Arial", label: "Arial" },
+  {
+    value: "Roboto",
+    label: "Roboto",
+    href: "https://fonts.googleapis.com/css2?family=Roboto",
+  },
+  { value: "Custom Font", label: "Custom", href: "/fonts/custom.css" },
+];
+
 const BlockIcon = ({ name }: { name: string }) => (
   <IconFont className="block-list-grid-item-icon" iconName={name} />
 );
@@ -470,6 +499,11 @@ export default function MyEditor() {
     enabledAutoComplete: true, // Enable automatic container structure completion
 
     categories,
+    // Merge tags need a paid plan (DYNAMIC_RENDER); passing them on the free
+    // tier makes the editor throw "Current plan do not support mergetags"
+    mergetags: process.env.NEXT_PUBLIC_CLIENT_ID ? mergetags : undefined,
+    mergetagsData,
+    fontList,
 
     // The tab bar only renders when this is set. Saving universal blocks
     // needs a paid plan, so the Universal tab stays empty on the free tier.
