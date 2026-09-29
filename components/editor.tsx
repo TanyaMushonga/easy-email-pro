@@ -16,6 +16,7 @@ import mjml from "mjml-browser";
 import "@arco-themes/react-easy-email-pro/css/arco.css";
 import templateData from "./template.json";
 import { prebuiltBlocks as starterBlocks } from "./prebuilt-blocks";
+import { useUniversalElements } from "./use-universal-elements";
 import { EditorCore } from "easy-email-pro-core";
 import { ElementType, t } from "easy-email-pro-core";
 import { Button, Layout } from "@arco-design/web-react";
@@ -159,6 +160,8 @@ export default function MyEditor() {
       }
     );
   }, []);
+
+  const universalElementSetting = useUniversalElements();
 
   const [saveStatus, setSaveStatus] = useState<SaveStatus>({ state: "idle" });
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -575,16 +578,8 @@ export default function MyEditor() {
     mergetagsData,
     fontList,
 
-    // The tab bar only renders when this is set. Saving universal blocks
-    // needs a paid plan, so the Universal tab stays empty on the free tier.
-    universalElementSetting: {
-      elements: {},
-      list: [],
-      onAddElement: () =>
-        Promise.reject(new Error("Universal blocks require a paid plan")),
-      onUpdateElement: () =>
-        Promise.reject(new Error("Universal blocks require a paid plan")),
-    },
+    // Reusable blocks (Universal tab); also makes the block tab bar render
+    universalElementSetting,
 
     // Shown in the Prebuilt tab: your blocks, then the starter set
     prebuiltBlocks: [...prebuiltBlocks, ...starterBlocks],
