@@ -6,6 +6,7 @@ import { EmailEditorProvider, EmailTemplate } from "easy-email-pro-editor";
 import {
   EditorContextProps,
   IconFont,
+  PrebuiltBlock,
   Retro,
   ThemeConfigProps,
 } from "easy-email-pro-theme";
@@ -14,10 +15,11 @@ import mjml from "mjml-browser";
 // Theme style, If you need to change the theme, you can make a duplicate in https://arco.design/themes/design/6979/setting/base/Color
 import "@arco-themes/react-easy-email-pro/css/arco.css";
 import templateData from "./template.json";
+import { prebuiltBlocks as starterBlocks } from "./prebuilt-blocks";
 import { EditorCore } from "easy-email-pro-core";
 import { ElementType, t } from "easy-email-pro-core";
 import { Layout } from "@arco-design/web-react";
-import { PluginManager } from "easy-email-pro-core";
+import { BlockManager, PluginManager } from "easy-email-pro-core";
 import {
   Countdown,
   CountdownV2,
@@ -29,6 +31,8 @@ import {
 } from "easy-email-pro-kit";
 // Adds the kit's element types to easy-email-pro-core's Element type
 import type {} from "easy-email-pro-kit/lib/typings/custom-types";
+import { PrebuiltBlockCategory } from "easy-email-pro-theme";
+import { StandardSectionElement } from "easy-email-pro-core";
 import axios from "axios";
 
 // Register the kit's marketing elements so they can be used in categories
@@ -277,6 +281,75 @@ export default function MyEditor() {
     },
     {
       get label() {
+        return t("Fixed");
+      },
+      active: true,
+      displayType: "grid",
+      blocks: [
+        {
+          type: ElementType.STANDARD_SECTION,
+          title: t("Sticky header"),
+          icon: <TextIcon>PH</TextIcon>,
+          payload: {
+            attributes: { "padding-top": "20px", "padding-bottom": "10px" },
+            children: [
+              {
+                type: ElementType.STANDARD_COLUMN,
+                data: {},
+                attributes: {},
+                children: [
+                  {
+                    type: ElementType.STANDARD_IMAGE,
+                    data: {},
+                    attributes: {
+                      src: "https://placehold.co/300x100?text=Your+Logo",
+                      width: "150px",
+                      align: "center",
+                    },
+                    children: [],
+                  },
+                  BlockManager.getBlockByType(
+                    ElementType.STANDARD_NAVBAR,
+                  ).create(),
+                ],
+              },
+            ],
+          },
+        },
+        {
+          type: ElementType.STANDARD_SECTION,
+          title: t("Sticky footer"),
+          icon: <TextIcon>PF</TextIcon>,
+          payload: {
+            attributes: { "padding-top": "20px", "padding-bottom": "20px" },
+            children: [
+              {
+                type: ElementType.STANDARD_COLUMN,
+                data: {},
+                attributes: {},
+                children: [
+                  BlockManager.getBlockByType(
+                    ElementType.STANDARD_SOCIAL,
+                  ).create(),
+                  {
+                    type: ElementType.STANDARD_PARAGRAPH,
+                    data: {},
+                    attributes: { align: "center" },
+                    children: [
+                      {
+                        text: "Your Company · 123 Street, City · You're receiving this email because you signed up.",
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      ],
+    },
+    {
+      get label() {
         return t("Layout");
       },
       active: true,
@@ -321,6 +394,43 @@ export default function MyEditor() {
     },
   ];
 
+  const headerBlock: PrebuiltBlock = {
+    thumbnail: "https://example.com/header-thumbnail.png",
+    title: "Header Centered Logo",
+    category: "Header/Footer",
+    payload: {
+      type: "standard-section",
+      data: {},
+      attributes: {
+        "background-color": "#FFFFFF",
+        "padding-top": "30px",
+        "padding-bottom": "30px",
+      },
+      children: [
+        // ... section content
+      ],
+    },
+  };
+
+  const prebuiltBlocks: PrebuiltBlockCategory[] = [
+    {
+      get label() {
+        return t("Header");
+      },
+      active: true,
+      blocks: [headerBlock],
+    },
+    {
+      get label() {
+        return t("Product Card");
+      },
+      active: true,
+      blocks: [
+        // ... product card blocks
+      ],
+    },
+  ];
+
   // Configure the editor with all necessary options
   const config = Retro.useCreateConfig({
     // Client ID for paid plans (optional for free tier)
@@ -360,6 +470,20 @@ export default function MyEditor() {
     enabledAutoComplete: true, // Enable automatic container structure completion
 
     categories,
+
+    // The tab bar only renders when this is set. Saving universal blocks
+    // needs a paid plan, so the Universal tab stays empty on the free tier.
+    universalElementSetting: {
+      elements: {},
+      list: [],
+      onAddElement: () =>
+        Promise.reject(new Error("Universal blocks require a paid plan")),
+      onUpdateElement: () =>
+        Promise.reject(new Error("Universal blocks require a paid plan")),
+    },
+
+    // Shown in the Prebuilt tab: your blocks, then the starter set
+    prebuiltBlocks: [...prebuiltBlocks, ...starterBlocks],
   });
 
   return (
